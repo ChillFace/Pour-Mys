@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#ffb3d6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Kosugi+Maru&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
 <style>
   :root {
     --rose: #ff7eb9;
@@ -142,12 +142,44 @@
   body.horreur #non { visibility: hidden; }
   body.horreur .outils button { border-color: #8a0000; background: #1a0000; }
 
-  #sang { position: fixed; inset: 0; z-index: 8; pointer-events: none; display: none; }
+  #sang { position: fixed; inset: 0; z-index: 8; pointer-events: none; display: none; overflow: hidden; }
   body.horreur #sang { display: block; }
-  #sang .voile { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 35%, rgba(150, 0, 0, .85)); animation: pulse .5s ease-in-out infinite; }
-  #sang .flash { position: absolute; inset: 0; background: #ff0000; mix-blend-mode: multiply; animation: flash 1.3s steps(1) infinite; }
+  #sang .voile { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 25%, rgba(60, 0, 0, .9) 75%, #000 100%); animation: pulse .45s ease-in-out infinite; }
+  #sang .flash { position: absolute; inset: 0; background: #ff0000; mix-blend-mode: multiply; animation: flash 1.1s steps(1) infinite; }
+  #sang .noir { position: absolute; inset: 0; background: #000; opacity: 0; animation: coupure 2.3s steps(1) infinite; }
+  #sang .lignes {
+    position: absolute; inset: -20px 0; opacity: .35;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.6) 0 2px, transparent 2px 4px);
+    animation: defile .25s linear infinite;
+  }
   #sang svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  #sang .goutte { transform-box: fill-box; transform-origin: top; animation: coule 4.5s cubic-bezier(.3,.1,.4,1) forwards; }
+  #sang .goutte { transform-box: fill-box; transform-origin: top; animation: coule 7s cubic-bezier(.25,.1,.35,1) both; }
+  #sang .tache { transform-box: fill-box; transform-origin: center; animation: eclabousse .18s ease-out both; }
+  #sang .flaque { transform-box: fill-box; transform-origin: bottom; animation: monte 9s ease-in both; }
+  #mots { position: absolute; inset: 0; }
+  .mot {
+    position: absolute; white-space: nowrap; font-family: "Creepster", "Impact", sans-serif;
+    color: #e00000; -webkit-text-stroke: 1.5px #000; paint-order: stroke fill;
+    text-shadow: 0 0 10px #ff0000, 3px 4px 0 #000;
+    animation: apparaitMot .25s ease-out both, trembleMot .08s linear infinite;
+  }
+  .mot.coule::after {
+    content: ""; position: absolute; left: 30%; top: 85%; width: 4px; height: 0;
+    background: linear-gradient(#b00000, #600000); border-radius: 0 0 3px 3px; animation: filet 2s ease-in forwards;
+  }
+  body.horreur .portrait img.glitch { filter: drop-shadow(6px 0 0 rgba(255,0,0,.8)) drop-shadow(-6px 0 0 rgba(0,255,255,.5)) contrast(1.6); transform: translateX(8px) skewX(6deg) scale(1.2); }
+  body.horreur .texte { font-family: "Creepster", "Impact", sans-serif; font-size: 24px; letter-spacing: .06em; animation: tremble .07s linear infinite; }
+  body.crescendo .carte { animation-duration: .05s; }
+  body.crescendo { animation-duration: .06s; }
+  body.crescendo #sang .flash { animation-duration: .45s; }
+
+  @keyframes coupure { 0%, 100% { opacity: 0; } 40% { opacity: .95; } 43% { opacity: 0; } 78% { opacity: .9; } 79% { opacity: 0; } }
+  @keyframes defile { to { transform: translateY(4px); } }
+  @keyframes eclabousse { from { transform: scale(0); } 70% { transform: scale(1.15); } to { transform: scale(1); } }
+  @keyframes monte { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @keyframes apparaitMot { from { opacity: 0; transform: scale(2.4) rotate(var(--r)); filter: blur(6px); } to { opacity: var(--o); transform: scale(1) rotate(var(--r)); } }
+  @keyframes trembleMot { 50% { translate: 2px -2px; } }
+  @keyframes filet { to { height: 60px; } }
 
   @keyframes secousse { 0% { background-position: 0 0; } 50% { background-position: 3px -3px; } }
   @keyframes tremble {
@@ -231,7 +263,14 @@
   </div>
 </section>
 
-<div id="sang" aria-hidden="true"><svg id="gouttes" preserveAspectRatio="none"></svg><div class="voile"></div><div class="flash"></div></div>
+<div id="sang" aria-hidden="true">
+  <div class="voile"></div>
+  <svg id="gouttes" preserveAspectRatio="none"></svg>
+  <div id="mots"></div>
+  <div class="lignes"></div>
+  <div class="flash"></div>
+  <div class="noir"></div>
+</div>
 <link rel="preload" as="image" href="fache.png">
 
 <audio id="m-menu" src="menu.mp3" loop preload="auto"></audio>
@@ -347,31 +386,71 @@
   non.addEventListener("mouseenter", fuir);
   non.addEventListener("click", fuir);
 
-  // ---------- Mode terrifiant (5 secondes) ----------
-  const DUREE = 5000;
+  // ---------- Mode terrifiant (10 secondes) ----------
+  const DUREE = 10000;
   const portrait = document.querySelector(".portrait img");
   const ruban = document.querySelector(".ruban");
   const zoneTexte = document.getElementById("texte");
+  const MOTS = [
+    "POURQUOI", "POURQUOI", "POURQUOI ?", "POURQUOI POURQUOI POURQUOI", "pourquoi...",
+    "DIS OUI", "RÉPONDS", "REGARDE-MOI", "TU ES À MOI", "NE ME LAISSE PAS EN VU",
+    "MYS...", "OUI. OUI. OUI.", "JE TE VOIS", "SENPAI", "NE DIS PLUS JAMAIS NON", "POURQUOI TU FAIS ÇA"
+  ];
+  const PHRASES = ["Pourquoi tu dis non… ?", "Pourquoi… ?", "POURQUOI ?", "POURQUOI POURQUOI POURQUOI", "Dis oui."];
+  let minuteries = [];
+  const plus_tard = (fn, ms) => minuteries.push(setTimeout(fn, ms));
+  const chaque = (fn, ms) => minuteries.push(setInterval(fn, ms));
 
   function horreur() {
     enHorreur = true;
     const sauvegarde = { img: portrait.src, ruban: ruban.textContent, texte: zoneTexte.textContent, piste: actuelle };
 
-    // Images et textes
     portrait.src = "fache.png";
     ruban.textContent = "POURQUOI";
-    zoneTexte.textContent = "Pourquoi tu dis non… ?";
+    zoneTexte.textContent = PHRASES[0];
+    document.getElementById("mots").innerHTML = "";
     dessinerSang();
     document.body.classList.add("horreur");
-    if (navigator.vibrate) navigator.vibrate([200, 100, 300, 100, 500]);
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 600, 200, 800, 100, 1500]);
 
-    // Musique : on coupe la piste en cours, on lance le son terrifiant
     for (const p of Object.values(pistes)) p.pause();
     const stopSon = sonTerrifiant();
 
-    setTimeout(() => {
+    // Mots qui envahissent l'écran, de plus en plus vite
+    let rythme = 380;
+    (function motSuivant() {
+      if (!enHorreur) return;
+      ajouterMot();
+      rythme = Math.max(110, rythme * .94);
+      plus_tard(motSuivant, rythme);
+    })();
+
+    // Le texte de la bulle change
+    let phrase = 0;
+    chaque(() => { phrase = (phrase + 1) % PHRASES.length; zoneTexte.textContent = PHRASES[phrase]; }, 1300);
+
+    // Le visage « bugue » : flashs entre les deux images
+    chaque(() => {
+      if (Math.random() < .45) {
+        portrait.classList.add("glitch");
+        if (Math.random() < .3) portrait.src = sauvegarde.img;
+        setTimeout(() => { portrait.classList.remove("glitch"); portrait.src = "fache.png"; }, 90 + Math.random() * 120);
+      }
+    }, 280);
+
+    // Nouvelles éclaboussures pendant tout l'effet
+    chaque(() => ajouterTaches(3), 700);
+
+    // Tout s'accélère pour la fin
+    plus_tard(() => document.body.classList.add("crescendo"), DUREE * .6);
+
+    plus_tard(() => {
+      for (const m of minuteries) { clearTimeout(m); clearInterval(m); }
+      minuteries = [];
       stopSon();
-      document.body.classList.remove("horreur");
+      document.body.classList.remove("horreur", "crescendo");
+      document.getElementById("mots").innerHTML = "";
+      portrait.classList.remove("glitch");
       portrait.src = sauvegarde.img;
       ruban.textContent = sauvegarde.ruban;
       zoneTexte.textContent = sauvegarde.texte;
@@ -381,77 +460,227 @@
     }, DUREE);
   }
 
-  // Coulées de sang dessinées depuis le haut de l'écran
+  function ajouterMot() {
+    const zone = document.getElementById("mots");
+    const m = document.createElement("div");
+    m.className = "mot" + (Math.random() < .4 ? " coule" : "");
+    m.textContent = MOTS[Math.floor(Math.random() * MOTS.length)];
+    const taille = 18 + Math.random() * Math.random() * 70;
+    m.style.fontSize = taille + "px";
+    m.style.left = (Math.random() * 100 - 15) + "vw";
+    m.style.top = (Math.random() * 100 - 4) + "vh";
+    m.style.setProperty("--r", (Math.random() * 50 - 25) + "deg");
+    m.style.setProperty("--o", (.55 + Math.random() * .45).toFixed(2));
+    zone.appendChild(m);
+    if (zone.children.length > 32) zone.firstChild.remove();
+  }
+
+  // Sang : coulées irrégulières, éclaboussures et flaque qui monte
   function dessinerSang() {
     const svg = document.getElementById("gouttes");
     const w = innerWidth, h = innerHeight;
     svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
-    let html = `<rect x="0" y="0" width="${w}" height="${h * .06}" fill="#7a0000"/>`;
-    for (let x = -10; x < w; x += 14 + Math.random() * 26) {
-      const larg = 8 + Math.random() * 22;
-      const long = h * (.08 + Math.random() * .75);
-      const delai = (Math.random() * 1.2).toFixed(2);
-      html += `<g class="goutte" style="animation-delay:${delai}s">
-        <rect x="${x}" y="0" width="${larg}" height="${long}" rx="${larg / 2}" fill="#8a0000"/>
-        <circle cx="${x + larg / 2}" cy="${long}" r="${larg * .75}" fill="#a00000"/>
-      </g>`;
+    let html = `<defs>
+      <linearGradient id="gSang" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3d0000"/><stop offset=".5" stop-color="#7a0000"/><stop offset="1" stop-color="#a30000"/>
+      </linearGradient>
+      <filter id="organique"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="7"/>
+        <feDisplacementMap in="SourceGraphic" scale="14"/></filter>
+    </defs><g filter="url(#organique)">`;
+    // Bandeau de sang en haut, bord irrégulier
+    let haut = `M0 0 H${w} V${h * .05}`;
+    for (let x = w; x > 0; x -= 18) haut += ` Q${x - 9} ${h * (.04 + Math.random() * .05)} ${x - 18} ${h * (.03 + Math.random() * .04)}`;
+    html += `<path d="${haut} Z" fill="url(#gSang)"/>`;
+    // Coulées
+    for (let x = -8; x < w; x += 10 + Math.random() * 22) {
+      const larg = 5 + Math.random() * 20, long = h * (.12 + Math.random() * Math.random() * .9);
+      const delai = (Math.random() * 2.5).toFixed(2), r = larg / 2;
+      const d = `M${x} 0 C${x} ${long * .4}, ${x + larg * .15} ${long * .7}, ${x + larg * .1} ${long - r}
+                 A${r * 1.2} ${r * 1.2} 0 1 0 ${x + larg * .9} ${long - r}
+                 C${x + larg * .85} ${long * .7}, ${x + larg} ${long * .4}, ${x + larg} 0 Z`;
+      html += `<g class="goutte" style="animation-delay:${delai}s"><path d="${d}" fill="url(#gSang)"/>
+        <path d="M${x + larg * .25} 0 V${long * .85}" stroke="rgba(255,120,120,.25)" stroke-width="${Math.max(1, larg * .12)}" stroke-linecap="round"/></g>`;
     }
+    // Flaque en bas
+    let flaque = `M0 ${h} V${h * .9}`;
+    for (let x = 0; x < w; x += 24) flaque += ` Q${x + 12} ${h * (.86 + Math.random() * .05)} ${x + 24} ${h * (.88 + Math.random() * .04)}`;
+    html += `<path class="flaque" d="${flaque} V${h} Z" fill="#4a0000"/></g><g id="taches" filter="url(#organique)"></g>`;
     svg.innerHTML = html;
+    ajouterTaches(6);
   }
 
-  // Son terrifiant généré par le navigateur (aucun fichier à ajouter)
+  function ajouterTaches(n) {
+    const g = document.getElementById("taches");
+    if (!g) return;
+    const w = innerWidth, h = innerHeight;
+    let html = "";
+    for (let i = 0; i < n; i++) {
+      const cx = Math.random() * w, cy = Math.random() * h, R = 12 + Math.random() * 34;
+      html += `<g class="tache"><circle cx="${cx}" cy="${cy}" r="${R}" fill="#6e0000" opacity=".9"/>`;
+      for (let k = 0; k < 9; k++) {
+        const a = Math.random() * 6.28, dist = R * (1 + Math.random() * 1.8);
+        html += `<circle cx="${cx + Math.cos(a) * dist}" cy="${cy + Math.sin(a) * dist}" r="${2 + Math.random() * R * .22}" fill="#8a0000"/>`;
+      }
+      html += `</g>`;
+    }
+    g.insertAdjacentHTML("beforeend", html);
+  }
+
+  // ---------- Son terrifiant (généré par le navigateur, aucun fichier) ----------
   let audioCtx;
   function sonTerrifiant() {
     if (muet) return () => {};
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const ac = audioCtx, t = ac.currentTime, fin = t + DUREE / 1000;
+    const ac = audioCtx;
+    if (ac.state === "suspended") ac.resume();
+    const t = ac.currentTime, D = DUREE / 1000, fin = t + D;
+    const sources = [];
+    const lance = (s, debut, arret) => { s.start(debut); s.stop(arret); sources.push(s); };
+
+    // Sortie avec compresseur pour que ce soit fort sans saturer
+    const comp = ac.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 6;
     const sortie = ac.createGain();
     sortie.gain.setValueAtTime(0, t);
-    sortie.gain.linearRampToValueAtTime(.9, t + .15);
-    sortie.gain.setValueAtTime(.9, fin - .4);
+    sortie.gain.linearRampToValueAtTime(1, t + .05);
+    sortie.gain.setValueAtTime(1, fin - .15);
     sortie.gain.linearRampToValueAtTime(0, fin);
-    sortie.connect(ac.destination);
-    const sources = [];
+    sortie.connect(comp); comp.connect(ac.destination);
 
-    // Grondement grave et dissonant
-    const filtre = ac.createBiquadFilter();
-    filtre.type = "lowpass"; filtre.frequency.value = 420; filtre.connect(sortie);
-    for (const f of [41, 43.5, 61.7, 87]) {
-      const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = f;
-      const g = ac.createGain(); g.gain.value = .22; o.connect(g); g.connect(filtre);
-      o.start(t); o.stop(fin); sources.push(o);
-    }
+    // Réverbération (salle immense et sombre)
+    const rev = ac.createConvolver();
+    const longR = ac.sampleRate * 3.5, ir = ac.createBuffer(2, longR, ac.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < longR; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / longR, 2.5); }
+    rev.buffer = ir;
+    const revG = ac.createGain(); revG.gain.value = .55; rev.connect(revG); revG.connect(sortie);
+    const bus = ac.createGain(); bus.connect(sortie); bus.connect(rev);
 
-    // Cris aigus qui montent
-    for (const [base, decal] of [[900, 0], [1340, .6]]) {
+    // Distorsion
+    const disto = ac.createWaveShaper();
+    const courbe = new Float32Array(2048);
+    for (let i = 0; i < 2048; i++) { const x = i / 1024 - 1; courbe[i] = Math.tanh(x * 12); }
+    disto.curve = courbe;
+
+    const bruitBuf = ac.createBuffer(1, ac.sampleRate * D, ac.sampleRate);
+    const nb = bruitBuf.getChannelData(0); for (let i = 0; i < nb.length; i++) nb[i] = Math.random() * 2 - 1;
+
+    // 1. Choc d'entrée : impact grave + accord strident
+    {
       const o = ac.createOscillator(); o.type = "sine";
-      o.frequency.setValueAtTime(base, t + decal);
-      o.frequency.exponentialRampToValueAtTime(base * 2.6, fin);
-      const vib = ac.createOscillator(); vib.frequency.value = 9;
-      const vibG = ac.createGain(); vibG.gain.value = 40; vib.connect(vibG); vibG.connect(o.frequency);
-      const g = ac.createGain(); g.gain.value = .05; o.connect(g); g.connect(sortie);
-      o.start(t + decal); vib.start(t + decal); o.stop(fin); vib.stop(fin); sources.push(o, vib);
-    }
-
-    // Battements de cœur
-    for (let b = t + .2; b < fin - .3; b += .55) {
-      for (const d of [0, .16]) {
-        const o = ac.createOscillator(); o.type = "sine";
-        o.frequency.setValueAtTime(70, b + d); o.frequency.exponentialRampToValueAtTime(35, b + d + .15);
-        const g = ac.createGain();
-        g.gain.setValueAtTime(0, b + d); g.gain.linearRampToValueAtTime(1, b + d + .01);
-        g.gain.exponentialRampToValueAtTime(.001, b + d + .18);
-        o.connect(g); g.connect(sortie); o.start(b + d); o.stop(b + d + .2); sources.push(o);
+      o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(28, t + 1.2);
+      const g = ac.createGain(); g.gain.setValueAtTime(1.4, t); g.gain.exponentialRampToValueAtTime(.001, t + 1.4);
+      o.connect(g); g.connect(bus); lance(o, t, t + 1.5);
+      for (const f of [523, 554, 587, 740, 784]) {
+        const s = ac.createOscillator(); s.type = "sawtooth"; s.frequency.value = f;
+        const sg = ac.createGain(); sg.gain.setValueAtTime(.09, t); sg.gain.exponentialRampToValueAtTime(.001, t + 2.2);
+        s.connect(sg); sg.connect(bus); lance(s, t, t + 2.3);
       }
     }
 
-    // Grésillements
-    const bruit = ac.createBuffer(1, ac.sampleRate * (DUREE / 1000), ac.sampleRate);
-    const data = bruit.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (Math.random() < .002 ? 1 : .06);
-    const n = ac.createBufferSource(); n.buffer = bruit;
-    const ng = ac.createGain(); ng.gain.value = .5; n.connect(ng); ng.connect(sortie);
-    n.start(t); sources.push(n);
+    // 2. Grondement grave qui monte, filtre qui respire
+    {
+      const filtre = ac.createBiquadFilter(); filtre.type = "lowpass"; filtre.Q.value = 8;
+      filtre.frequency.setValueAtTime(180, t); filtre.frequency.exponentialRampToValueAtTime(900, fin);
+      const lfo = ac.createOscillator(); lfo.frequency.value = .7;
+      const lfoG = ac.createGain(); lfoG.gain.value = 120; lfo.connect(lfoG); lfoG.connect(filtre.frequency); lance(lfo, t, fin);
+      const g = ac.createGain(); g.gain.setValueAtTime(.25, t); g.gain.linearRampToValueAtTime(.55, fin);
+      filtre.connect(g); g.connect(bus);
+      for (const f of [36.7, 38.9, 55, 58.3, 73.4]) {
+        const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = f;
+        o.frequency.linearRampToValueAtTime(f * 1.06, fin);
+        o.connect(filtre); lance(o, t, fin);
+      }
+    }
+
+    // 3. Cris : bruit filtré qui glisse + distorsion (son de hurlement)
+    function cri(debut, duree, hauteur, volume) {
+      const n = ac.createBufferSource(); n.buffer = bruitBuf;
+      const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 14;
+      bp.frequency.setValueAtTime(hauteur, debut);
+      bp.frequency.exponentialRampToValueAtTime(hauteur * 2.2, debut + duree * .4);
+      bp.frequency.exponentialRampToValueAtTime(hauteur * 1.3, debut + duree);
+      const voix = ac.createOscillator(); voix.type = "sawtooth";
+      voix.frequency.setValueAtTime(hauteur / 3, debut); voix.frequency.exponentialRampToValueAtTime(hauteur / 1.4, debut + duree);
+      const vib = ac.createOscillator(); vib.frequency.value = 7 + Math.random() * 5;
+      const vibG = ac.createGain(); vibG.gain.value = hauteur * .06; vib.connect(vibG); vibG.connect(voix.frequency);
+      const vg = ac.createGain(); vg.gain.value = .25; voix.connect(vg); vg.connect(bp);
+      n.connect(bp);
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0, debut); g.gain.linearRampToValueAtTime(volume, debut + .06);
+      g.gain.setValueAtTime(volume, debut + duree * .7); g.gain.exponentialRampToValueAtTime(.001, debut + duree);
+      bp.connect(disto); disto.connect(g); g.connect(bus);
+      n.start(debut, Math.random() * (D - duree - .1)); n.stop(debut + duree); sources.push(n);
+      lance(voix, debut, debut + duree); lance(vib, debut, debut + duree);
+    }
+    cri(t + .3, 1.6, 900, .35);
+    cri(t + 2.6, 1.2, 1300, .3);
+    cri(t + 4.4, 2.0, 700, .4);
+    cri(t + 6.5, .9, 1600, .3);
+    cri(t + 7.6, 2.2, 1000, .5);
+    cri(t + 8.2, 1.6, 1500, .45);
+
+    // 4. Chuchotements qui tournent autour (gauche/droite)
+    for (let k = 0; k < 14; k++) {
+      const debut = t + .8 + Math.random() * (D - 1.8), duree = .25 + Math.random() * .6;
+      const n = ac.createBufferSource(); n.buffer = bruitBuf;
+      const hp = ac.createBiquadFilter(); hp.type = "bandpass"; hp.frequency.value = 2500 + Math.random() * 2500; hp.Q.value = 2;
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0, debut);
+      for (let s = 0; s < duree; s += .06) g.gain.setValueAtTime(Math.random() * .35, debut + s);
+      g.gain.setValueAtTime(0, debut + duree);
+      const pan = ac.createStereoPanner ? ac.createStereoPanner() : ac.createGain();
+      if (pan.pan) pan.pan.value = Math.random() * 2 - 1;
+      n.connect(hp); hp.connect(g); g.connect(pan); pan.connect(bus);
+      n.start(debut, Math.random() * (D - 1)); n.stop(debut + duree); sources.push(n);
+    }
+
+    // 5. Boîte à musique faussée (mélodie mineure qui se désaccorde)
+    {
+      const notes = [659, 622, 659, 622, 659, 494, 587, 523, 440, 0, 262, 330, 440, 494];
+      for (let i = 0; i < 28; i++) {
+        const f = notes[i % notes.length]; if (!f) continue;
+        const debut = t + 1 + i * .3; if (debut > fin - .3) break;
+        const o = ac.createOscillator(); o.type = "triangle";
+        const desaccord = 1 - i * .006;
+        o.frequency.setValueAtTime(f * desaccord, debut);
+        o.frequency.linearRampToValueAtTime(f * desaccord * .97, debut + .5);
+        const g = ac.createGain(); g.gain.setValueAtTime(.12, debut); g.gain.exponentialRampToValueAtTime(.001, debut + .6);
+        o.connect(g); g.connect(bus); lance(o, debut, debut + .65);
+      }
+    }
+
+    // 6. Cœur qui bat de plus en plus vite
+    for (let b = t + .4, ecart = .9; b < fin - .2; b += ecart, ecart = Math.max(.28, ecart * .9)) {
+      for (const d of [0, .14]) {
+        const o = ac.createOscillator(); o.type = "sine";
+        o.frequency.setValueAtTime(65, b + d); o.frequency.exponentialRampToValueAtTime(30, b + d + .16);
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0, b + d); g.gain.linearRampToValueAtTime(1.3, b + d + .008);
+        g.gain.exponentialRampToValueAtTime(.001, b + d + .2);
+        o.connect(g); g.connect(sortie); lance(o, b + d, b + d + .22);
+      }
+    }
+
+    // 7. Coups brutaux (jumpscares sonores)
+    for (const moment of [3.4, 5.9, 8.8]) {
+      const debut = t + moment;
+      const n = ac.createBufferSource(); n.buffer = bruitBuf;
+      const g = ac.createGain(); g.gain.setValueAtTime(1.2, debut); g.gain.exponentialRampToValueAtTime(.001, debut + .5);
+      n.connect(disto); disto.connect(g); g.connect(bus);
+      n.start(debut, 0); n.stop(debut + .5); sources.push(n);
+      for (const f of [98, 104, 147, 156]) {
+        const o = ac.createOscillator(); o.type = "square"; o.frequency.value = f;
+        const og = ac.createGain(); og.gain.setValueAtTime(.18, debut); og.gain.exponentialRampToValueAtTime(.001, debut + .9);
+        o.connect(og); og.connect(bus); lance(o, debut, debut + 1);
+      }
+    }
+
+    // 8. Grésillements de radio cassée
+    {
+      const n = ac.createBufferSource(); n.buffer = bruitBuf;
+      const g = ac.createGain(); g.gain.value = 0;
+      for (let s = 0; s < D; s += .05) g.gain.setValueAtTime(Math.random() < .12 ? .5 : .02, t + s);
+      n.connect(g); g.connect(sortie); n.start(t); n.stop(fin); sources.push(n);
+    }
 
     return () => { for (const s of sources) { try { s.stop(); } catch (e) {} } sortie.disconnect(); };
   }
