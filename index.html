@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pour Mys 🌸</title>
+<meta name="theme-color" content="#ffb3d6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose: #ff7eb9;
+    --rose-fonce: #e8559a;
+    --rose-clair: #ffd3e8;
+    --rose-pale: #fff0f7;
+    --blanc: #ffffff;
+    --marine: #1f2a5c;
+    --texte: #4a2140;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Kosugi Maru", "Trebuchet MS", sans-serif;
+    color: var(--texte);
+    background:
+      radial-gradient(circle at 20% 15%, #fff 0 2px, transparent 3px) 0 0 / 46px 46px,
+      linear-gradient(180deg, #ffc6e2 0%, #ffe3f0 55%, #ffd0e6 100%);
+    background-color: #ffd9eb;
+    overflow: hidden;
+    min-height: 100svh;
+  }
+
+  /* Pétales */
+  #petales { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+
+  /* Branche de cerisier dessinée */
+  .branche { position: fixed; top: -10px; width: 62vw; max-width: 360px; z-index: 0; opacity: .95; }
+  .branche.g { left: -20px; }
+  .branche.d { right: -20px; transform: scaleX(-1); }
+
+  .ecran {
+    position: fixed; inset: 0; z-index: 2;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    transition: opacity .8s ease, transform .8s ease;
+  }
+  .cache { opacity: 0; pointer-events: none; transform: scale(.97); }
+
+  /* Accueil */
+  .logo { width: min(88vw, 460px); filter: drop-shadow(0 6px 0 rgba(232,85,154,.25)); animation: flotte 3.2s ease-in-out infinite; }
+  .sous-titre {
+    margin-top: 18px; font-family: "Mochiy Pop One", sans-serif; color: var(--rose-fonce);
+    font-size: clamp(16px, 4.6vw, 22px); text-align: center; letter-spacing: .04em;
+    text-shadow: 0 2px 0 #fff;
+  }
+  .bouton-coeur {
+    margin-top: 34px; position: relative; width: 150px; height: 140px; border: none; background: none; cursor: pointer;
+    animation: bat 1.1s ease-in-out infinite;
+  }
+  .bouton-coeur svg { width: 100%; height: 100%; filter: drop-shadow(0 6px 0 rgba(232,85,154,.35)); }
+  .bouton-coeur span {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 14px;
+    font-family: "Mochiy Pop One", sans-serif; font-size: 20px; color: #fff; text-shadow: 0 2px 0 var(--rose-fonce);
+  }
+  .indice { margin-top: 10px; font-size: 13px; color: #b34f84; opacity: .8; }
+
+  /* Scène */
+  .carte {
+    width: min(94vw, 440px);
+    background: var(--blanc);
+    border: 4px solid var(--rose);
+    border-radius: 26px;
+    box-shadow: 0 0 0 6px var(--rose-clair), 0 14px 30px rgba(200, 60, 130, .25);
+    overflow: hidden;
+  }
+  .ruban {
+    position: relative; background: var(--rose-clair); border-bottom: 3px solid var(--rose);
+    text-align: center; padding: 10px 12px;
+    font-family: "Mochiy Pop One", sans-serif; color: var(--rose-fonce);
+    font-size: clamp(15px, 4.4vw, 19px); letter-spacing: .25em;
+  }
+  .ruban::before, .ruban::after { content: "♥"; color: var(--rose); margin: 0 8px; letter-spacing: 0; }
+  .portrait { position: relative; aspect-ratio: 1 / 1; max-height: 46svh; width: 100%; overflow: hidden; background: #f9c6df; }
+  .portrait img { width: 100%; height: 100%; object-fit: cover; display: block; animation: respire 4s ease-in-out infinite; }
+  .portrait::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 65%, rgba(255, 126, 185, .35));
+  }
+
+  .dialogue { position: relative; padding: 22px 18px 16px; background: var(--rose-pale); }
+  .nom {
+    position: absolute; top: -16px; left: 16px;
+    background: var(--marine); color: #fff; border: 3px solid #fff; border-radius: 12px;
+    padding: 4px 14px; font-size: 14px; letter-spacing: .08em; box-shadow: 0 3px 0 var(--rose);
+  }
+  .texte { min-height: 4.8em; font-size: clamp(17px, 4.8vw, 20px); line-height: 1.55; }
+  .curseur { display: inline-block; width: .5em; animation: clignote .8s steps(1) infinite; color: var(--rose); }
+
+  .question { display: none; margin-top: 14px; text-align: center; }
+  .question.visible { display: block; animation: apparait .5s ease; }
+  .question p { font-family: "Mochiy Pop One", sans-serif; color: var(--rose-fonce); font-size: 17px; }
+  .choix { position: relative; margin-top: 12px; height: 52px; display: flex; gap: 14px; justify-content: center; }
+  .choix button {
+    font-family: "Mochiy Pop One", sans-serif; font-size: 16px; border-radius: 999px; padding: 10px 26px; cursor: pointer;
+    border: 3px solid var(--rose); transition: transform .2s ease, left .25s ease, top .25s ease;
+  }
+  #oui { background: var(--rose); color: #fff; box-shadow: 0 4px 0 var(--rose-fonce); }
+  #non { background: #fff; color: var(--rose-fonce); }
+  #non.fuit { position: fixed; z-index: 5; }
+
+  .final { display: none; text-align: center; margin-top: 10px; font-family: "Mochiy Pop One", sans-serif; color: var(--rose-fonce); font-size: 18px; }
+  .final.visible { display: block; animation: apparait .6s ease; }
+
+  .outils { position: fixed; z-index: 6; top: max(12px, env(safe-area-inset-top)); right: 12px; display: flex; gap: 8px; }
+  .outils button {
+    width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--rose); background: #fff;
+    font-size: 19px; cursor: pointer; box-shadow: 0 3px 0 var(--rose-clair);
+  }
+
+  .confetti { position: fixed; z-index: 7; pointer-events: none; font-size: 22px; animation: pluie 2.6s ease-in forwards; }
+
+  /* ---------- Mode terrifiant ---------- */
+  body { transition: background-color .3s; }
+  body.horreur {
+    background: radial-gradient(ellipse at center, #3a0000 0%, #120000 70%, #000 100%);
+    background-color: #120000;
+    animation: secousse .12s linear infinite;
+  }
+  body.horreur .branche { filter: grayscale(1) brightness(.25) sepia(1) hue-rotate(-40deg) saturate(6); }
+  body.horreur .carte {
+    border-color: #8a0000; box-shadow: 0 0 0 6px #2a0000, 0 0 40px 10px rgba(200, 0, 0, .7);
+    animation: tremble .09s linear infinite;
+  }
+  body.horreur .ruban { background: #2a0000; color: #ff2020; border-color: #8a0000; letter-spacing: .3em; }
+  body.horreur .ruban::before, body.horreur .ruban::after { color: #ff2020; }
+  body.horreur .portrait::after { background: radial-gradient(ellipse at center, transparent 40%, rgba(120, 0, 0, .75)); }
+  body.horreur .portrait img { filter: contrast(1.35) saturate(1.5) sepia(.35) hue-rotate(-25deg); animation: zoomPeur .35s ease-in-out infinite alternate; }
+  body.horreur .dialogue { background: #1a0000; color: #ff3030; }
+  body.horreur .nom { background: #8a0000; }
+  body.horreur .question { visibility: hidden; }
+  body.horreur #non { visibility: hidden; }
+  body.horreur .outils button { border-color: #8a0000; background: #1a0000; }
+
+  #sang { position: fixed; inset: 0; z-index: 8; pointer-events: none; display: none; }
+  body.horreur #sang { display: block; }
+  #sang .voile { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 35%, rgba(150, 0, 0, .85)); animation: pulse .5s ease-in-out infinite; }
+  #sang .flash { position: absolute; inset: 0; background: #ff0000; mix-blend-mode: multiply; animation: flash 1.3s steps(1) infinite; }
+  #sang svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  #sang .goutte { transform-box: fill-box; transform-origin: top; animation: coule 4.5s cubic-bezier(.3,.1,.4,1) forwards; }
+
+  @keyframes secousse { 0% { background-position: 0 0; } 50% { background-position: 3px -3px; } }
+  @keyframes tremble {
+    0% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(-6px, 4px) rotate(-1.2deg); }
+    50% { transform: translate(5px, -5px) rotate(1deg); } 75% { transform: translate(-4px, -3px) rotate(-.6deg); }
+    100% { transform: translate(4px, 5px) rotate(.8deg); }
+  }
+  @keyframes zoomPeur { from { transform: scale(1.05); } to { transform: scale(1.18) rotate(-1deg); } }
+  @keyframes pulse { 50% { opacity: .55; } }
+  @keyframes flash { 0%, 100% { opacity: 0; } 8% { opacity: .55; } 12% { opacity: 0; } 55% { opacity: .35; } 58% { opacity: 0; } }
+  @keyframes coule { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+  @keyframes flotte { 50% { transform: translateY(-8px); } }
+  @keyframes bat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.1); } 30% { transform: scale(1); } 45% { transform: scale(1.07); } }
+  @keyframes respire { 50% { transform: scale(1.03); } }
+  @keyframes clignote { 50% { opacity: 0; } }
+  @keyframes apparait { from { opacity: 0; transform: translateY(8px); } }
+  @keyframes pluie { to { transform: translateY(110vh) rotate(540deg); opacity: .2; } }
+  @media (prefers-reduced-motion: reduce) {
+    .logo, .bouton-coeur, .portrait img { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Branches de cerisier dessinées -->
+<svg class="branche g" viewBox="0 0 360 220" aria-hidden="true">
+  <path d="M0 40 C 80 50, 140 70, 210 120 S 320 190, 350 200" stroke="#6b3a4a" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M120 66 C 150 40, 175 30, 210 28" stroke="#6b3a4a" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M230 135 C 250 110, 270 100, 300 98" stroke="#6b3a4a" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <g fill="#ffb7d5" stroke="#ff8cbf" stroke-width="1.5">
+    <g id="fleur"><circle cx="0" cy="-9" r="8"/><circle cx="8.5" cy="-3" r="8"/><circle cx="5.5" cy="7" r="8"/><circle cx="-5.5" cy="7" r="8"/><circle cx="-8.5" cy="-3" r="8"/><circle r="3.5" fill="#ff5fa2" stroke="none"/></g>
+    <use href="#fleur" x="60" y="40"/><use href="#fleur" x="110" y="64"/><use href="#fleur" x="160" y="40"/>
+    <use href="#fleur" x="210" y="26"/><use href="#fleur" x="190" y="104"/><use href="#fleur" x="250" y="140"/>
+    <use href="#fleur" x="300" y="96"/><use href="#fleur" x="320" y="186"/><use href="#fleur" x="30" y="30"/>
+  </g>
+</svg>
+<svg class="branche d" viewBox="0 0 360 220" aria-hidden="true">
+  <path d="M0 40 C 80 50, 140 70, 210 120 S 320 190, 350 200" stroke="#6b3a4a" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M120 66 C 150 40, 175 30, 210 28" stroke="#6b3a4a" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <g fill="#ffc7df" stroke="#ff8cbf" stroke-width="1.5">
+    <use href="#fleur" x="70" y="44"/><use href="#fleur" x="140" y="76"/><use href="#fleur" x="200" y="30"/>
+    <use href="#fleur" x="220" y="122"/><use href="#fleur" x="290" y="170"/>
+  </g>
+</svg>
+
+<canvas id="petales"></canvas>
+
+<div class="outils">
+  <button id="son" aria-label="Couper le son" title="Son">🔊</button>
+</div>
+
+<!-- Écran d'accueil -->
+<section class="ecran" id="accueil">
+  <img class="logo" src="logo.png" alt="Yandere Simulator">
+  <p class="sous-titre">Un message spécial pour <b>Mys</b> 🌸</p>
+  <button class="bouton-coeur" id="ouvrir" aria-label="Ouvrir le message">
+    <svg viewBox="0 0 100 90"><path d="M50 86 C 18 62, 2 44, 2 26 C 2 12, 13 2, 27 2 C 37 2, 45 8, 50 16 C 55 8, 63 2, 73 2 C 87 2, 98 12, 98 26 C 98 44, 82 62, 50 86 Z" fill="#ff7eb9" stroke="#fff" stroke-width="4"/></svg>
+    <span>Ouvrir 💌</span>
+  </button>
+  <p class="indice">touche le cœur</p>
+</section>
+
+<!-- Scène du message -->
+<section class="ecran cache" id="scene">
+  <div class="carte">
+    <div class="ruban">POUR MYS</div>
+    <div class="portrait"><img src="perso.png" alt=""></div>
+    <div class="dialogue">
+      <div class="nom">Message</div>
+      <p class="texte"><span id="texte"></span><span class="curseur">▌</span></p>
+      <div class="question" id="question">
+        <p>Tu me pardonnes ?</p>
+        <div class="choix">
+          <button id="oui">Oui 🌸</button>
+          <button id="non">Non</button>
+        </div>
+      </div>
+      <p class="final" id="final">Merci Mys !! 💪🌸</p>
+    </div>
+  </div>
+</section>
+
+<div id="sang" aria-hidden="true"><svg id="gouttes" preserveAspectRatio="none"></svg><div class="voile"></div><div class="flash"></div></div>
+<link rel="preload" as="image" href="fache.png">
+
+<audio id="m-menu" src="menu.mp3" loop preload="auto"></audio>
+<audio id="m-ecole" src="schoolday.mp3" loop preload="auto"></audio>
+<audio id="m-kiss" src="dreams.mp3" loop preload="auto"></audio>
+
+<script>
+  const MESSAGE = "Je suis désolé de t'avoir mis des vus, Mys… je suis juste occupé 💪";
+
+  // ---------- Pétales ----------
+  const cv = document.getElementById("petales"), ctx = cv.getContext("2d");
+  let W, H, petales = [], enHorreur = false;
+  function taille() { W = cv.width = innerWidth * devicePixelRatio; H = cv.height = innerHeight * devicePixelRatio; }
+  taille(); addEventListener("resize", taille);
+  const calme = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  for (let i = 0; i < (calme ? 10 : 34); i++) petales.push(nouveau(true));
+  function nouveau(partout) {
+    const s = (6 + Math.random() * 8) * devicePixelRatio;
+    return { x: Math.random() * W, y: partout ? Math.random() * H : -20, s,
+      vy: (0.5 + Math.random()) * devicePixelRatio, vx: (Math.random() - .3) * devicePixelRatio,
+      a: Math.random() * 6.28, va: (Math.random() - .5) * .05, o: Math.random() * 6.28 };
+  }
+  function dessine() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of petales) {
+      p.o += .02; p.x += p.vx + Math.sin(p.o) * .6; p.y += p.vy; p.a += p.va;
+      if (p.y > H + 20 || p.x > W + 20 || p.x < -20) Object.assign(p, nouveau(false));
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
+      ctx.fillStyle = enHorreur ? "rgba(150,0,0,.95)" : "rgba(255,150,195,.85)";
+      ctx.beginPath(); ctx.moveTo(0, -p.s);
+      ctx.bezierCurveTo(p.s, -p.s * .6, p.s * .7, p.s * .6, 0, p.s);
+      ctx.bezierCurveTo(-p.s * .7, p.s * .6, -p.s, -p.s * .6, 0, -p.s * .55);
+      ctx.fill(); ctx.restore();
+    }
+    requestAnimationFrame(dessine);
+  }
+  dessine();
+
+  // ---------- Musique ----------
+  const pistes = {
+    menu: document.getElementById("m-menu"),
+    ecole: document.getElementById("m-ecole"),
+    kiss: document.getElementById("m-kiss"),
+  };
+  const boutonSon = document.getElementById("son");
+  let muet = false, actuelle = null;
+  for (const p of Object.values(pistes)) p.volume = .6;
+
+  function jouer(nom) {
+    if (actuelle === nom && !pistes[nom].paused) return;
+    for (const [n, p] of Object.entries(pistes)) if (n !== nom) { p.pause(); p.currentTime = 0; }
+    actuelle = nom;
+    const p = pistes[nom];
+    p.muted = muet;
+    p.play().catch(() => {});
+  }
+
+  boutonSon.onclick = (e) => {
+    e.stopPropagation();
+    muet = !muet;
+    for (const p of Object.values(pistes)) p.muted = muet;
+    boutonSon.textContent = muet ? "🔇" : "🔊";
+    if (!muet) jouer(actuelle || "menu");
+  };
+
+  // Musique du menu : essaie tout de suite, sinon au premier toucher de l'écran
+  // (les téléphones bloquent le son tant qu'on n'a pas touché la page).
+  jouer("menu");
+  document.addEventListener("pointerdown", () => { if (actuelle === "menu") jouer("menu"); }, { once: true });
+
+  // ---------- Ouverture ----------
+  document.getElementById("ouvrir").onclick = () => {
+    jouer("ecole");
+    document.getElementById("accueil").classList.add("cache");
+    document.getElementById("scene").classList.remove("cache");
+    setTimeout(ecrire, 900);
+  };
+
+  // ---------- Texte lettre par lettre ----------
+  function ecrire() {
+    const zone = document.getElementById("texte");
+    const lettres = Array.from(MESSAGE);
+    let i = 0;
+    (function suivante() {
+      zone.textContent += lettres[i++];
+      if (i < lettres.length) {
+        const c = lettres[i - 1];
+        setTimeout(suivante, c === "," || c === "…" ? 380 : 55);
+      } else {
+        document.querySelector(".curseur").style.display = "none";
+        setTimeout(() => document.getElementById("question").classList.add("visible"), 600);
+      }
+    })();
+  }
+
+  // ---------- Le bouton « Non » s'enfuit ----------
+  const non = document.getElementById("non");
+  let essais = 0, dernierEssai = 0;
+  function fuir(e) {
+    e.preventDefault();
+    if (enHorreur) return;
+    // Un seul toucher déclenche plusieurs événements : on ne compte qu'un essai par 300 ms.
+    const maintenant = Date.now();
+    if (maintenant - dernierEssai > 300) { essais++; dernierEssai = maintenant; }
+    if (essais > 3) { essais = 0; horreur(); return; }
+    const r = non.getBoundingClientRect();
+    non.classList.add("fuit");
+    const x = 16 + Math.random() * (innerWidth - r.width - 32);
+    const y = 70 + Math.random() * (innerHeight - r.height - 140);
+    non.style.left = x + "px"; non.style.top = y + "px";
+  }
+  non.addEventListener("pointerdown", fuir);
+  non.addEventListener("mouseenter", fuir);
+  non.addEventListener("click", fuir);
+
+  // ---------- Mode terrifiant (5 secondes) ----------
+  const DUREE = 5000;
+  const portrait = document.querySelector(".portrait img");
+  const ruban = document.querySelector(".ruban");
+  const zoneTexte = document.getElementById("texte");
+
+  function horreur() {
+    enHorreur = true;
+    const sauvegarde = { img: portrait.src, ruban: ruban.textContent, texte: zoneTexte.textContent, piste: actuelle };
+
+    // Images et textes
+    portrait.src = "fache.png";
+    ruban.textContent = "POURQUOI";
+    zoneTexte.textContent = "Pourquoi tu dis non… ?";
+    dessinerSang();
+    document.body.classList.add("horreur");
+    if (navigator.vibrate) navigator.vibrate([200, 100, 300, 100, 500]);
+
+    // Musique : on coupe la piste en cours, on lance le son terrifiant
+    for (const p of Object.values(pistes)) p.pause();
+    const stopSon = sonTerrifiant();
+
+    setTimeout(() => {
+      stopSon();
+      document.body.classList.remove("horreur");
+      portrait.src = sauvegarde.img;
+      ruban.textContent = sauvegarde.ruban;
+      zoneTexte.textContent = sauvegarde.texte;
+      non.classList.remove("fuit"); non.style.left = ""; non.style.top = "";
+      enHorreur = false;
+      if (sauvegarde.piste && !muet) pistes[sauvegarde.piste].play().catch(() => {});
+    }, DUREE);
+  }
+
+  // Coulées de sang dessinées depuis le haut de l'écran
+  function dessinerSang() {
+    const svg = document.getElementById("gouttes");
+    const w = innerWidth, h = innerHeight;
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+    let html = `<rect x="0" y="0" width="${w}" height="${h * .06}" fill="#7a0000"/>`;
+    for (let x = -10; x < w; x += 14 + Math.random() * 26) {
+      const larg = 8 + Math.random() * 22;
+      const long = h * (.08 + Math.random() * .75);
+      const delai = (Math.random() * 1.2).toFixed(2);
+      html += `<g class="goutte" style="animation-delay:${delai}s">
+        <rect x="${x}" y="0" width="${larg}" height="${long}" rx="${larg / 2}" fill="#8a0000"/>
+        <circle cx="${x + larg / 2}" cy="${long}" r="${larg * .75}" fill="#a00000"/>
+      </g>`;
+    }
+    svg.innerHTML = html;
+  }
+
+  // Son terrifiant généré par le navigateur (aucun fichier à ajouter)
+  let audioCtx;
+  function sonTerrifiant() {
+    if (muet) return () => {};
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ac = audioCtx, t = ac.currentTime, fin = t + DUREE / 1000;
+    const sortie = ac.createGain();
+    sortie.gain.setValueAtTime(0, t);
+    sortie.gain.linearRampToValueAtTime(.9, t + .15);
+    sortie.gain.setValueAtTime(.9, fin - .4);
+    sortie.gain.linearRampToValueAtTime(0, fin);
+    sortie.connect(ac.destination);
+    const sources = [];
+
+    // Grondement grave et dissonant
+    const filtre = ac.createBiquadFilter();
+    filtre.type = "lowpass"; filtre.frequency.value = 420; filtre.connect(sortie);
+    for (const f of [41, 43.5, 61.7, 87]) {
+      const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = f;
+      const g = ac.createGain(); g.gain.value = .22; o.connect(g); g.connect(filtre);
+      o.start(t); o.stop(fin); sources.push(o);
+    }
+
+    // Cris aigus qui montent
+    for (const [base, decal] of [[900, 0], [1340, .6]]) {
+      const o = ac.createOscillator(); o.type = "sine";
+      o.frequency.setValueAtTime(base, t + decal);
+      o.frequency.exponentialRampToValueAtTime(base * 2.6, fin);
+      const vib = ac.createOscillator(); vib.frequency.value = 9;
+      const vibG = ac.createGain(); vibG.gain.value = 40; vib.connect(vibG); vibG.connect(o.frequency);
+      const g = ac.createGain(); g.gain.value = .05; o.connect(g); g.connect(sortie);
+      o.start(t + decal); vib.start(t + decal); o.stop(fin); vib.stop(fin); sources.push(o, vib);
+    }
+
+    // Battements de cœur
+    for (let b = t + .2; b < fin - .3; b += .55) {
+      for (const d of [0, .16]) {
+        const o = ac.createOscillator(); o.type = "sine";
+        o.frequency.setValueAtTime(70, b + d); o.frequency.exponentialRampToValueAtTime(35, b + d + .15);
+        const g = ac.createGain();
+        g.gain.setValueAtTime(0, b + d); g.gain.linearRampToValueAtTime(1, b + d + .01);
+        g.gain.exponentialRampToValueAtTime(.001, b + d + .18);
+        o.connect(g); g.connect(sortie); o.start(b + d); o.stop(b + d + .2); sources.push(o);
+      }
+    }
+
+    // Grésillements
+    const bruit = ac.createBuffer(1, ac.sampleRate * (DUREE / 1000), ac.sampleRate);
+    const data = bruit.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (Math.random() < .002 ? 1 : .06);
+    const n = ac.createBufferSource(); n.buffer = bruit;
+    const ng = ac.createGain(); ng.gain.value = .5; n.connect(ng); ng.connect(sortie);
+    n.start(t); sources.push(n);
+
+    return () => { for (const s of sources) { try { s.stop(); } catch (e) {} } sortie.disconnect(); };
+  }
+
+  // ---------- « Oui » ----------
+  document.getElementById("oui").onclick = () => {
+    jouer("kiss");
+    document.getElementById("question").style.display = "none";
+    non.style.display = "none";
+    document.getElementById("final").classList.add("visible");
+    const emojis = ["🌸", "💪", "🌸", "✨", "🎀"];
+    for (let i = 0; i < 40; i++) {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.textContent = emojis[i % emojis.length];
+      c.style.left = Math.random() * 100 + "vw";
+      c.style.top = -30 - Math.random() * 120 + "px";
+      c.style.animationDelay = Math.random() * .8 + "s";
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 3600);
+    }
+  };
+</script>
+</body>
+</html>
